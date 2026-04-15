@@ -1,0 +1,12 @@
+.git
+.github
+**/bin
+**/obj
+**/*.user
+**/.vs
+**/TestResults
+**/coverage
+logs/
+*.md
+infrastructure/
+tests/

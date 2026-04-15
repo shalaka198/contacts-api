@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "dgSpecHash": "uSEvMbUlJqI=",
+  "success": true,
+  "projectFilePath": "/Users/shalaka.sakhardande/contacts-api/src/Contacts.Application/Contacts.Application.csproj",
+  "expectedPackageFiles": [
+    "/Users/shalaka.sakhardande/.nuget/packages/fluentvalidation/11.11.0/fluentvalidation.11.11.0.nupkg.sha512",
+    "/Users/shalaka.sakhardande/.nuget/packages/mediatr/12.4.1/mediatr.12.4.1.nupkg.sha512",
+    "/Users/shalaka.sakhardande/.nuget/packages/mediatr.contracts/2.0.1/mediatr.contracts.2.0.1.nupkg.sha512",
+    "/Users/shalaka.sakhardande/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.2/microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",
+    "/Users/shalaka.sakhardande/.nuget/packages/microsoft.extensions.logging.abstractions/8.0.3/microsoft.extensions.logging.abstractions.8.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

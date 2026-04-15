@@ -1,0 +1,97 @@
+name: CD – Staging
+
+on:
+  push:
+    branches: [develop]
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  AWS_REGION: ap-southeast-2
+  ECR_REPOSITORY: contacts-api
+  ECS_CLUSTER: contacts-api-staging
+  ECS_SERVICE: contacts-api-staging
+  CONTAINER_NAME: contacts-api
+  IMAGE_TAG: ${{ github.sha }}
+
+permissions:
+  id-token: write   # Required for OIDC-based AWS auth (no long-lived keys)
+  contents: read
+
+jobs:
+  deploy-staging:
+    name: Build → Push ECR → Deploy ECS (staging)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Authenticate to AWS via OIDC (no long-lived credentials) ──────────
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── Build & push Docker image to ECR ──────────────────────────────────
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build \
+            --cache-from "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+            .
+
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      # ── Scan the pushed image for vulnerabilities ─────────────────────────
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build-image.outputs.image }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL
+
+      # ── Update ECS task definition & deploy ───────────────────────────────
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition $ECS_SERVICE \
+            --query taskDefinition > task-def.json
+
+      - name: Render new task definition with updated image
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-def.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+          environment-variables: |
+            ASPNETCORE_ENVIRONMENT=Staging
+
+      - name: Deploy to ECS (rolling update)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+          wait-for-minutes: 10
+
+      # ── Smoke test ────────────────────────────────────────────────────────
+      - name: Smoke test – health check
+        run: |
+          curl --retry 5 --retry-delay 5 --fail \
+            "${{ secrets.STAGING_API_URL }}/health/live"

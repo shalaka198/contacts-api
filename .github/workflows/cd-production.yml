@@ -1,0 +1,93 @@
+name: CD – Production
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"   # Semantic version tags only: v1.2.3
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  AWS_REGION: ap-southeast-2
+  ECR_REPOSITORY: contacts-api
+  ECS_CLUSTER: contacts-api-production
+  ECS_SERVICE: contacts-api-production
+  CONTAINER_NAME: contacts-api
+
+permissions:
+  id-token: write
+  contents: write   # Needed to create GitHub Release
+
+jobs:
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production     # Requires manual approval gate in GitHub Environments
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Promote staging image by tagging it with the release tag (no rebuild)
+      - name: Promote staging image to production tag
+        id: promote-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          docker pull "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          docker tag  "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+                      "$ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG"
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG"
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download current production task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition $ECS_SERVICE \
+            --query taskDefinition > task-def-prod.json
+
+      - name: Render task definition with production image
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-def-prod.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.promote-image.outputs.image }}
+          environment-variables: |
+            ASPNETCORE_ENVIRONMENT=Production
+
+      # Blue/green via CodeDeploy (configured on the ECS service)
+      - name: Deploy to ECS (blue/green)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          codedeploy-appspec: appspec.json
+          codedeploy-application: contacts-api-production
+          codedeploy-deployment-group: production
+          wait-for-service-stability: true
+          wait-for-minutes: 20
+
+      - name: Smoke test – production health check
+        run: |
+          curl --retry 5 --retry-delay 10 --fail \
+            "${{ secrets.PRODUCTION_API_URL }}/health/live"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          make_latest: true
