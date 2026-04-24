@@ -130,8 +130,10 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 
 // ── Migrate database on startup ───────────────────────────────────────────────
-using (var scope = app.Services.CreateScope())
+// Skipped in Testing environment — migrations are run explicitly by the test factory.
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
 }

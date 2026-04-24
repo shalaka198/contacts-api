@@ -26,6 +26,13 @@ public sealed class ApiWebApplicationFactory : WebApplicationFactory<Program>, I
     public async Task InitializeAsync()
     {
         await _postgres.StartAsync();
+
+        // Explicitly run migrations against the test container after it's ready.
+        // This is more reliable than depending on Program.cs startup migration
+        // since the WebApplicationFactory's service replacement timing can vary.
+        await using var scope = Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
     }
 
     public new async Task DisposeAsync()
