@@ -48,12 +48,6 @@ public sealed class ApiWebApplicationFactory : WebApplicationFactory<Program>, I
             // Register with the Testcontainer's connection string
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(_postgres.GetConnectionString()));
-
-            // Apply migrations against the test container
-            var sp = services.BuildServiceProvider();
-            using var scope = sp.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.Migrate();
         });
     }
 

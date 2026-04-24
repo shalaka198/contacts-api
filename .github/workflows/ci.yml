@@ -78,6 +78,8 @@ jobs:
       contents: read
       checks: write
       pull-requests: write
+    env:
+      TESTCONTAINERS_RYUK_DISABLED: "true"
 
     steps:
       - name: Checkout
