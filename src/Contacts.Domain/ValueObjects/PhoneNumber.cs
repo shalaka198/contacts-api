@@ -15,7 +15,7 @@ public sealed record PhoneNumber
 
     private PhoneNumber(string? value) => Value = value;
 
-    public static PhoneNumber None() => new(null);
+    public static PhoneNumber None() => new((string?)null);
 
     public static PhoneNumber From(string value)
     {

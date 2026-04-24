@@ -66,4 +66,7 @@ public sealed class Result
     public static Result Failure(Error error) => new(false, error);
 
     public static implicit operator Result(Error error) => new(false, error);
+
+    public TOut Match<TOut>(Func<bool, TOut> onSuccess, Func<Error, TOut> onFailure) =>
+        IsSuccess ? onSuccess(true) : onFailure(_error!);
 }
