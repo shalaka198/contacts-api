@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;
 using Testcontainers.PostgreSql;
@@ -45,16 +46,13 @@ public sealed class ApiWebApplicationFactory : WebApplicationFactory<Program>, I
     {
         builder.UseEnvironment("Testing");
 
-        builder.ConfigureServices(services =>
+        // Override only the connection string so the normal app wiring is reused.
+        builder.ConfigureAppConfiguration((_, config) =>
         {
-            // Remove the production DbContext registration
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-            if (descriptor is not null) services.Remove(descriptor);
-
-            // Register with the Testcontainer's connection string
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(_postgres.GetConnectionString()));
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString()
+            });
         });
     }
 
