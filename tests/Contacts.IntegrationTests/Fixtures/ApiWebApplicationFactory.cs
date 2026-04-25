@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;
 using Testcontainers.PostgreSql;
@@ -27,13 +26,6 @@ public sealed class ApiWebApplicationFactory : WebApplicationFactory<Program>, I
     public async Task InitializeAsync()
     {
         await _postgres.StartAsync();
-
-        // Explicitly run migrations against the test container after it's ready.
-        // This is more reliable than depending on Program.cs startup migration
-        // since the WebApplicationFactory's service replacement timing can vary.
-        await using var scope = Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Database.MigrateAsync();
     }
 
     public new async Task DisposeAsync()
@@ -46,13 +38,22 @@ public sealed class ApiWebApplicationFactory : WebApplicationFactory<Program>, I
     {
         builder.UseEnvironment("Testing");
 
-        // Override only the connection string so the normal app wiring is reused.
-        builder.ConfigureAppConfiguration((_, config) =>
+        builder.ConfigureServices(services =>
         {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString()
-            });
+            // Remove the production DbContext registration
+            var descriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
+            if (descriptor is not null) services.Remove(descriptor);
+
+            // Register with the Testcontainer's connection string
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(_postgres.GetConnectionString()));
+
+            // Apply migrations against the test container
+            var sp = services.BuildServiceProvider();
+            using var scope = sp.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.Migrate();
         });
     }
 
