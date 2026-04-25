@@ -63,14 +63,14 @@ public sealed class ErrorHandlingMiddleware
             Type = $"https://httpstatuses.com/{(int)statusCode}",
             Title = title,
             Status = (int)statusCode,
-            Detail = _env.IsDevelopment() ? exception.Message : detail,
+            Detail = (_env.IsDevelopment() || _env.IsEnvironment("Testing")) ? exception.Message : detail,
             Instance = context.Request.Path
         };
 
         problem.Extensions["correlationId"] =
             context.Request.Headers["X-Correlation-Id"].FirstOrDefault() ?? "unknown";
 
-        if (_env.IsDevelopment())
+        if (_env.IsDevelopment() || _env.IsEnvironment("Testing"))
             problem.Extensions["stackTrace"] = exception.StackTrace;
 
         await context.Response.WriteAsync(JsonSerializer.Serialize(problem, JsonOptions));

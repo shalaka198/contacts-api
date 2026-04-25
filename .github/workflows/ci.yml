@@ -16,6 +16,10 @@ jobs:
   build-and-test:
     name: Build & Unit Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -70,6 +74,12 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: build-and-test
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    env:
+      TESTCONTAINERS_RYUK_DISABLED: "true"
 
     steps:
       - name: Checkout

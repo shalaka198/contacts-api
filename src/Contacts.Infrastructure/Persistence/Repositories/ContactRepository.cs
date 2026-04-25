@@ -18,7 +18,7 @@ internal sealed class ContactRepository : IContactRepository
     public async Task<Contact?> GetByEmailAsync(string email, CancellationToken cancellationToken) =>
         await _context.Contacts
             .FirstOrDefaultAsync(
-                c => EF.Functions.ILike(c.Email.Value, email),
+                c => EF.Functions.ILike(EF.Property<string>(c, "email"), email),
                 cancellationToken);
 
     public async Task<(IReadOnlyList<Contact> Items, int TotalCount)> ListAsync(
@@ -35,7 +35,7 @@ internal sealed class ContactRepository : IContactRepository
             query = query.Where(c =>
                 EF.Functions.ILike(c.FirstName, term) ||
                 EF.Functions.ILike(c.LastName, term) ||
-                EF.Functions.ILike(c.Email.Value, term) ||
+                EF.Functions.ILike(EF.Property<string>(c, "email"), term) ||
                 (c.Organisation != null && EF.Functions.ILike(c.Organisation, term)));
         }
 

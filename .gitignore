@@ -1,0 +1,46 @@
+# ── Build outputs ────────────────────────────────────────────────────────────
+bin/
+obj/
+artifacts/
+publish/
+
+# ── IDE / OS ─────────────────────────────────────────────────────────────────
+.vs/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ── Visual Studio ─────────────────────────────────────────────────────────────
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ── Test & benchmark results ─────────────────────────────────────────────────
+TestResults/
+BenchmarkDotNet.Artifacts/
+
+# ── NuGet ────────────────────────────────────────────────────────────────────
+*.nupkg
+*.snupkg
+packages/
+
+# ── Secrets / environment ────────────────────────────────────────────────────
+.env
+.env.*
+secrets.json
+appsettings.Local.json
+appsettings.*.Local.json
+
+# ── Runtime logs (Serilog rolling files) ─────────────────────────────────────
+logs/
+
+# ── Terraform ────────────────────────────────────────────────────────────────
+infrastructure/.terraform/
+infrastructure/terraform.tfstate
+infrastructure/terraform.tfstate.backup
+infrastructure/.terraform.lock.hcl
+infrastructure/*.tfvars
+!infrastructure/*.tfvars.example

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using Contacts.Application;
@@ -32,7 +33,7 @@ builder.Host.UseSerilog((ctx, services, loggerConfig) =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// ── API Controllers ───────────────────────────────────────────────────────────
+// ── API Controllers ──────────────────────────────────────────────────────────
 builder.Services
     .AddControllers()
     .AddJsonOptions(o =>
@@ -41,7 +42,7 @@ builder.Services
         o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// ── API Versioning ────────────────────────────────────────────────────────────
+// ── API Versioning ───────────────────────────────────────────────────────────
 builder.Services
     .AddApiVersioning(options =>
     {
@@ -58,7 +59,7 @@ builder.Services
         options.SubstituteApiVersionInUrl = true;
     });
 
-// ── Swagger / OpenAPI ─────────────────────────────────────────────────────────
+// ── Swagger / OpenAPI ────────────────────────────────────────────────────────
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -94,7 +95,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ── Health Checks ─────────────────────────────────────────────────────────────
+// ── Health Checks ───────────────────────────────────────────────────────────
 builder.Services
     .AddHealthChecks()
     .AddNpgSql(
@@ -102,7 +103,7 @@ builder.Services
         name: "database",
         tags: ["db", "postgres"]);
 
-// ── CORS ──────────────────────────────────────────────────────────────────────
+// ── CORS ────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowConfigured", policy =>
@@ -129,8 +130,10 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 
 // ── Migrate database on startup ───────────────────────────────────────────────
-using (var scope = app.Services.CreateScope())
+// Skipped in Testing environment — migrations are run by ApiWebApplicationFactory
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
 }
