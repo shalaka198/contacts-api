@@ -11,11 +11,9 @@ public sealed record PhoneNumber
             System.Text.RegularExpressions.RegexOptions.Compiled,
             TimeSpan.FromMilliseconds(100));
 
-    public string? Value { get; }
-
+    public string? Value { get; init; }
     private PhoneNumber(string? value) => Value = value;
-
-    public static PhoneNumber None() => new(null);
+    public static PhoneNumber None() => new((string?)null);
 
     public static PhoneNumber From(string value)
     {

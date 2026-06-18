@@ -88,43 +88,43 @@ public sealed class ContactsController : ControllerBase
             Problem);
     }
 
-    /// <summary>
-    /// Replaces an existing contact (full update).
-    /// </summary>
-    /// <param name="id">The contact's unique identifier.</param>
-    [HttpPut("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Update(
-        Guid id,
-        [FromBody] UpdateContactRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var command = new UpdateContactCommand(
-            id, request.FirstName, request.LastName, request.Email,
-            request.Phone, request.Organisation);
+    // /// <summary>
+    // /// Replaces an existing contact (full update).
+    // /// </summary>
+    // /// <param name="id">The contact's unique identifier.</param>
+    // [HttpPut("{id:guid}")]
+    // [ProducesResponseType(StatusCodes.Status204NoContent)]
+    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    // [ProducesResponseType(StatusCodes.Status404NotFound)]
+    // [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    // public async Task<IActionResult> Update(
+    //     Guid id,
+    //     [FromBody] UpdateContactRequest request,
+    //     CancellationToken cancellationToken = default)
+    // {
+    //     var command = new UpdateContactCommand(
+    //         id, request.FirstName, request.LastName, request.Email,
+    //         request.Phone, request.Organisation);
 
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.Match<IActionResult>(_ => NoContent(), Problem);
-    }
+    //     var result = await _mediator.Send(command, cancellationToken);
+    //     return result.Match<IActionResult>(_ => NoContent(), Problem);
+    // }
 
-    /// <summary>
-    /// Soft-deletes a contact.
-    /// </summary>
-    /// <param name="id">The contact's unique identifier.</param>
-    [HttpDelete("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Delete(
-        Guid id,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await _mediator.Send(new DeleteContactCommand(id), cancellationToken);
-        return result.Match<IActionResult>(_ => NoContent(), Problem);
-    }
+    // /// <summary>
+    // /// Soft-deletes a contact.
+    // /// </summary>
+    // /// <param name="id">The contact's unique identifier.</param>
+    // [HttpDelete("{id:guid}")]
+    // [ProducesResponseType(StatusCodes.Status204NoContent)]
+    // [ProducesResponseType(StatusCodes.Status404NotFound)]
+    // [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    // public async Task<IActionResult> Delete(
+    //     Guid id,
+    //     CancellationToken cancellationToken = default)
+    // {
+    //     var result = await _mediator.Send(new DeleteContactCommand(id), cancellationToken);
+    //     return result.Match<IActionResult>(_ => NoContent(), Problem);
+    // }
 
     // ── Private helper: map Error to RFC 7807 ProblemDetails ─────────────────
     private IActionResult Problem(Error error)
