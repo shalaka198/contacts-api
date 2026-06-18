@@ -1,0 +1,72 @@
+# .gitignore for a .NET project
+
+# Build results
+bin/
+obj/
+
+# Visual Studio files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code workspace settings
+.vscode/
+
+# Rider
+.idea/
+*.sln.iml
+
+# NuGet packages
+*.nupkg
+packages/
+
+# ASP.NET temporary files
+*.vs/
+
+# User-specific files
+*.orig
+*.rej
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Dotnet local tool cache
+.nuget/
+
+# Test result files
+TestResults/
+*.trx
+
+# Docker files
+docker-compose.override.yml
+
+# Publish outputs
+publish/
+
+# JetBrains Rider local history
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+
+# Coverage files
+coverage.*
+*.coverage
+*.coveragexml
+
+# Editor temp files
+*~
+*.swp
+*.tmp
+
+# Azure Web App publish settings
+*.Publish.xml
+
+# Entity Framework Migrations history
+**/Migrations/**/snapshot.cs
